@@ -13,8 +13,6 @@ import styles from "./VideoPlayer.module.css";
 function VideoPlayer() {
   const [isFullScreen, setIsFullScreen] = useState(false);
 
-  const [isPause, setIsPause] = useState(true);
-
   const [isPlay, setIsPlay] = useState(false);
 
   const [isMuted, setIsMuted] = useState(false);
@@ -55,11 +53,18 @@ function VideoPlayer() {
       setIsControlPanelShow(false);
     };
     let mouseNotMove = setTimeout(hideControlPanel, 3000);
+
     window.addEventListener("mousemove", () => {
       setIsControlPanelShow(true);
       window.clearTimeout(mouseNotMove);
       mouseNotMove = setTimeout(hideControlPanel, 3000);
     });
+
+    window.addEventListener('keydown', () => {
+      setIsControlPanelShow(true);
+      window.clearTimeout(mouseNotMove);
+      mouseNotMove = setTimeout(hideControlPanel, 3000);
+    })
   }, []);
 
   function exitHandler() {
@@ -88,11 +93,10 @@ function VideoPlayer() {
 
   //handle click play/pasue button
   function handlePlayPause() {
-    if (isPause === true) {
-      setIsPause(false);
+    if (isPlay === true) {
       setIsPlay(false);
-    } else {
-      setIsPause(true);
+    } 
+    else {
       setIsPlay(true);
     }
   }
@@ -134,11 +138,60 @@ function VideoPlayer() {
     );
   }
 
+  function handleOnChangeCurrentPlayTime(e) {
+    setCurrentPlayTime((e.target.value / 1000) * player.current.getDuration());
+    player.current.seekTo(
+      (e.target.value / 1000) * player.current.getDuration(),
+      "seconds"
+    );
+  }
+
+  function handleCurrentPlayTimeRightButton() {
+    setCurrentPlayTime(currentPlayTime + 5);
+    player.current.seekTo(currentPlayTime + 5, "seconds");
+  }
+  function handleCurrentPlayTimeLeftButton() {
+    setCurrentPlayTime(currentPlayTime - 5);
+    player.current.seekTo(currentPlayTime - 5, "seconds");
+  }
+  function handleCurrentPlayTimeUpButton() {
+    setIsMuted(false);
+    if (volumeLevel + 5 > 100) {
+      setvolumeLevel(100);
+    } else setvolumeLevel(volumeLevel + 5);
+  }
+  function handleCurrentPlayTimeDownButton() {
+    if (volumeLevel - 5 < 0) {
+      setvolumeLevel(0);
+      setIsMuted(true);
+    } else setvolumeLevel(volumeLevel - 5);
+  }
+
+  function handleKeyDown(e) {
+    e.preventDefault();
+    if (e.key === ' ') {
+      handlePlayPause(e);
+    }
+    if (e.key === "ArrowRight") {
+      handleCurrentPlayTimeRightButton();
+    }
+    if (e.key === "ArrowLeft") {
+      handleCurrentPlayTimeLeftButton();
+    }
+    if (e.key === "ArrowUp") {
+      handleCurrentPlayTimeUpButton();
+    }
+    if (e.key === "ArrowDown") {
+      handleCurrentPlayTimeDownButton();
+    }
+  }
+
   return (
     <div
       className={styles.videoWrapper}
       ref={videoPlayer}
       onDoubleClick={handleExitFullscreen}
+      onKeyDown={handleKeyDown}
     >
       <ReactPlayer
         url={"/videos/video.mp4"} // Can use other url such as youtube
@@ -174,7 +227,7 @@ function VideoPlayer() {
               <div className={styles.controller}>
                 <div className={styles.leftController}>
                   <button onClick={handlePlayPause}>
-                    {isPause ? (
+                    {isPlay ? (
                       <MdPause className="icon" size="32px" />
                     ) : (
                       <MdPlayArrow className="icon" size="32px" />
